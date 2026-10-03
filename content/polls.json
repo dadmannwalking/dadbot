@@ -1,0 +1,6 @@
+[
+  {"id": "poll-001", "text": "When are you most productive?", "options": ["Early morning", "Afternoon", "Evening", "After midnight"]},
+  {"id": "poll-002", "text": "Pick a low-stakes superpower.", "options": ["Perfect parking", "Never lose keys", "Always right temperature", "Instantly fold laundry"]},
+  {"id": "poll-003", "text": "What's the ideal project soundtrack?", "options": ["Music", "Podcast", "Ambient noise", "Glorious silence"]},
+  {"id": "poll-004", "text": "How do you prefer to learn something new?", "options": ["Read it", "Watch it", "Try it", "Ask someone"]}
+]
