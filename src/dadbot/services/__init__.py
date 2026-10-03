@@ -1,4 +1,4 @@
-"""External integrations used by Dadbot."""
+"""External integrations used by dadbot."""
 
 from .livestream import YouTubeLivestreamMonitor
 from .twitch import TwitchLivestreamMonitor, parse_streams

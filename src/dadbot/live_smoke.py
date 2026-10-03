@@ -41,10 +41,10 @@ class LiveSmokeBot(DadBot):
             results.append(f"{feature}: sent")
 
         first_upload = await self.youtube_uploads.simulate(
-            "dadbot-smoke-upload", "Dadbot upload smoke test"
+            "dadbot-smoke-upload", "dadbot upload smoke test"
         )
         duplicate_upload = await self.youtube_uploads.simulate(
-            "dadbot-smoke-upload", "Dadbot upload smoke test"
+            "dadbot-smoke-upload", "dadbot upload smoke test"
         )
         if duplicate_upload:
             raise AssertionError("Upload duplicate suppression failed")
@@ -53,16 +53,16 @@ class LiveSmokeBot(DadBot):
         )
 
         await self.livestreams.simulate(
-            "dadbot-smoke-stream", "Dadbot livestream smoke test", StreamState.SCHEDULED
+            "dadbot-smoke-stream", "dadbot livestream smoke test", StreamState.SCHEDULED
         )
         first_live = await self.livestreams.simulate(
-            "dadbot-smoke-stream", "Dadbot livestream smoke test", StreamState.LIVE
+            "dadbot-smoke-stream", "dadbot livestream smoke test", StreamState.LIVE
         )
         duplicate_live = await self.livestreams.simulate(
-            "dadbot-smoke-stream", "Dadbot livestream smoke test", StreamState.LIVE
+            "dadbot-smoke-stream", "dadbot livestream smoke test", StreamState.LIVE
         )
         await self.livestreams.simulate(
-            "dadbot-smoke-stream", "Dadbot livestream smoke test", StreamState.ENDED
+            "dadbot-smoke-stream", "dadbot livestream smoke test", StreamState.ENDED
         )
         if duplicate_live:
             raise AssertionError("Livestream duplicate suppression failed")
@@ -71,13 +71,13 @@ class LiveSmokeBot(DadBot):
         )
 
         first_twitch = await self.twitch_livestreams.simulate(
-            "dadbot-smoke-twitch", "Dadbot Twitch smoke test", StreamState.LIVE
+            "dadbot-smoke-twitch", "dadbot Twitch smoke test", StreamState.LIVE
         )
         duplicate_twitch = await self.twitch_livestreams.simulate(
-            "dadbot-smoke-twitch", "Dadbot Twitch smoke test", StreamState.LIVE
+            "dadbot-smoke-twitch", "dadbot Twitch smoke test", StreamState.LIVE
         )
         await self.twitch_livestreams.simulate(
-            "dadbot-smoke-twitch", "Dadbot Twitch smoke test", StreamState.ENDED
+            "dadbot-smoke-twitch", "dadbot Twitch smoke test", StreamState.ENDED
         )
         if duplicate_twitch:
             raise AssertionError("Twitch duplicate suppression failed")
@@ -138,7 +138,7 @@ class LiveSmokeBot(DadBot):
                 (
                     self.settings.guild_id,
                     channel.id,
-                    "Dadbot live-test event",
+                    "dadbot live-test event",
                     "A harmless test gathering for checking the snacks and the RSVP buttons.",
                     iso(event_at),
                     self.user.id,
@@ -173,7 +173,7 @@ class LiveSmokeBot(DadBot):
             raise AssertionError(f"Missing application commands: {required - names}")
         results.append(f"commands: {', '.join(sorted(names))}")
         await channel.send(
-            "✅ **Dadbot live integration smoke test passed**\n"
+            "✅ **dadbot live integration smoke test passed**\n"
             + "\n".join(f"• {r}" for r in results)
         )
         log.info("Live Discord smoke test passed: %s", "; ".join(results))

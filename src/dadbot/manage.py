@@ -20,7 +20,7 @@ async def initialize() -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Dadbot local administration")
+    parser = argparse.ArgumentParser(description="dadbot local administration")
     subcommands = parser.add_subparsers(dest="command", required=True)
     subcommands.add_parser("init-db")
     subcommands.add_parser("check-db")

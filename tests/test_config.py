@@ -8,6 +8,8 @@ def test_notification_channels_and_twitch_settings(monkeypatch) -> None:
         "DISCORD_DEFAULT_CHANNEL_ID": "10",
         "DISCORD_YOUTUBE_UPLOAD_CHANNEL_ID": "11",
         "DISCORD_LIVE_NOTIFICATION_CHANNEL_ID": "12",
+        "DISCORD_YOUTUBE_UPLOAD_ROLE_ID": "21",
+        "DISCORD_LIVE_NOTIFICATION_ROLE_ID": "22",
         "DISCORD_EVENT_CHANNEL_ID": "13",
         "TWITCH_CLIENT_ID": "client",
         "TWITCH_CLIENT_SECRET": "secret",
@@ -21,6 +23,8 @@ def test_notification_channels_and_twitch_settings(monkeypatch) -> None:
 
     assert settings.youtube_upload_channel_id == 11
     assert settings.live_notification_channel_id == 12
+    assert settings.youtube_upload_role_id == 21
+    assert settings.live_notification_role_id == 22
     assert settings.event_channel_id == 13
     assert settings.twitch_user_login == "dadmannwalking"
     assert settings.twitch_poll_minutes == 3

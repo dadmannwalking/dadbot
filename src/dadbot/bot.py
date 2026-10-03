@@ -24,6 +24,22 @@ from dadbot.types import ExternalItem
 log = logging.getLogger(__name__)
 
 
+def notification_content(
+    label: str, guild: discord.Guild, role_id: int | None
+) -> tuple[str, discord.AllowedMentions]:
+    """Build a notification with one explicitly allow-listed role mention."""
+    if role_id is None:
+        return label, discord.AllowedMentions.none()
+    role = guild.get_role(role_id)
+    if role is None:
+        log.warning("Configured notification role %s is not visible in guild %s", role_id, guild.id)
+        return label, discord.AllowedMentions.none()
+    return (
+        f"{role.mention} {label}",
+        discord.AllowedMentions(everyone=False, users=False, roles=[role], replied_user=False),
+    )
+
+
 class DadBot(commands.Bot):
     def __init__(self, settings: Settings) -> None:
         intents = discord.Intents.none()
@@ -93,7 +109,7 @@ class DadBot(commands.Bot):
         ]
 
     async def close(self) -> None:
-        log.info("Dadbot shutdown requested")
+        log.info("dadbot shutdown requested")
         for task in self._monitor_tasks:
             task.cancel()
         for task in self._monitor_tasks:
@@ -105,7 +121,7 @@ class DadBot(commands.Bot):
             await self.http_session.close()
         await self.db.close()
         await super().close()
-        log.info("Dadbot shutdown complete")
+        log.info("dadbot shutdown complete")
 
     async def on_ready(self) -> None:
         if self.user:
@@ -183,7 +199,10 @@ class DadBot(commands.Bot):
             description="Fresh from YouTube. The pixels are still warm.",
             color=discord.Color.red(),
         )
-        await channel.send("📺 **New video uploaded!**", embed=embed)
+        content, allowed_mentions = notification_content(
+            "📺 **New video uploaded!**", channel.guild, self.settings.youtube_upload_role_id
+        )
+        await channel.send(content, embed=embed, allowed_mentions=allowed_mentions)
         log.info("Announced YouTube upload %s", item.external_id)
 
     async def announce_livestream(self, item: ExternalItem) -> None:
@@ -196,7 +215,12 @@ class DadBot(commands.Bot):
             color=discord.Color.from_rgb(145, 70, 255) if is_twitch else discord.Color.red(),
         )
         platform = "Twitch" if is_twitch else "YouTube"
-        await channel.send(f"🔴 **We’re live on {platform} now!**", embed=embed)
+        content, allowed_mentions = notification_content(
+            f"🔴 **We’re live on {platform} now!**",
+            channel.guild,
+            self.settings.live_notification_role_id,
+        )
+        await channel.send(content, embed=embed, allowed_mentions=allowed_mentions)
         log.info("Announced %s livestream %s", platform, item.external_id)
 
     async def send_due_event_reminders(self) -> None:
@@ -224,7 +248,7 @@ async def run() -> None:
     configure_logging(settings.log_level, settings.log_path)
     bot = DadBot(settings)
     bot.tree.on_error = tree_error
-    log.info("Starting Dadbot; development_mode=%s", settings.development_mode)
+    log.info("Starting dadbot; development_mode=%s", settings.development_mode)
     async with bot:
         await bot.start(settings.bot_token)
 

@@ -1,1 +1,1 @@
-"""Dadbot bootstrap package."""
+"""dadbot package."""

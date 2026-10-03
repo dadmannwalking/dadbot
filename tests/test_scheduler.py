@@ -18,6 +18,8 @@ def settings(tmp_path) -> Settings:
         default_channel_id=2,
         youtube_upload_channel_id=2,
         live_notification_channel_id=2,
+        youtube_upload_role_id=None,
+        live_notification_role_id=None,
         suggestion_channel_id=2,
         highlight_channel_id=2,
         event_channel_id=2,

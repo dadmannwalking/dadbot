@@ -19,7 +19,7 @@ SOURCE = "twitch_livestream"
 
 
 def parse_streams(payload: dict[str, Any], user_login: str) -> list[ExternalItem]:
-    """Convert valid Helix stream records into Dadbot external items."""
+    """Convert valid Helix stream records into dadbot external items."""
     result: list[ExternalItem] = []
     for raw in payload.get("data", []):
         stream_id = raw.get("id")

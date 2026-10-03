@@ -36,13 +36,13 @@ async def require_operator(interaction: discord.Interaction, bot: DadBot) -> boo
 
 
 class OperationsCog(commands.Cog):
-    status_commands = app_commands.Group(name="bot", description="Dadbot operational commands")
+    status_commands = app_commands.Group(name="bot", description="dadbot operational commands")
     dev_group = app_commands.Group(name="dev", description="Protected development commands")
 
     def __init__(self, bot: DadBot) -> None:
         self.bot = bot
 
-    @status_commands.command(name="status", description="Show Dadbot operational health")
+    @status_commands.command(name="status", description="Show dadbot operational health")
     async def status(self, interaction: discord.Interaction) -> None:
         now = datetime.now(UTC)
         uptime = now - self.bot.started_at
@@ -58,7 +58,7 @@ class OperationsCog(commands.Cog):
         upload_status = self.bot.youtube_uploads.status
         stream_status = self.bot.livestreams.status
         twitch_status = self.bot.twitch_livestreams.status
-        embed = discord.Embed(title="Dadbot status", color=discord.Color.green(), timestamp=now)
+        embed = discord.Embed(title="dadbot status", color=discord.Color.green(), timestamp=now)
         embed.add_field(name="Uptime", value=str(uptime).split(".")[0], inline=True)
         embed.add_field(name="Latency", value=f"{self.bot.latency * 1000:.0f} ms", inline=True)
         embed.add_field(

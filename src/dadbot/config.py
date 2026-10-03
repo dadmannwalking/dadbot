@@ -62,6 +62,8 @@ class Settings:
     default_channel_id: int | None
     youtube_upload_channel_id: int | None
     live_notification_channel_id: int | None
+    youtube_upload_role_id: int | None
+    live_notification_role_id: int | None
     suggestion_channel_id: int | None
     highlight_channel_id: int | None
     event_channel_id: int | None
@@ -87,7 +89,7 @@ class Settings:
     schedule_hour_end: int
     backup_retention: int
     send_test_message: bool = False
-    test_message: str = "Dadbot bootstrap connection test."
+    test_message: str = "dadbot bootstrap connection test."
     twitch_client_id: str = ""
     twitch_client_secret: str = ""
     twitch_user_login: str = ""
@@ -117,6 +119,8 @@ class Settings:
             live_notification_channel_id=_integer(
                 "DISCORD_LIVE_NOTIFICATION_CHANNEL_ID", default_channel
             ),
+            youtube_upload_role_id=_integer("DISCORD_YOUTUBE_UPLOAD_ROLE_ID"),
+            live_notification_role_id=_integer("DISCORD_LIVE_NOTIFICATION_ROLE_ID"),
             suggestion_channel_id=_integer("DISCORD_SUGGESTION_CHANNEL_ID", default_channel),
             highlight_channel_id=_integer("DISCORD_HIGHLIGHT_CHANNEL_ID", default_channel),
             event_channel_id=_integer("DISCORD_EVENT_CHANNEL_ID", default_channel),
@@ -142,7 +146,7 @@ class Settings:
             schedule_hour_end=_integer_or("SCHEDULE_HOUR_END", 20),
             backup_retention=_integer_or("BACKUP_RETENTION", 14),
             send_test_message=_boolean("DISCORD_SEND_TEST_MESSAGE"),
-            test_message=_text("DISCORD_TEST_MESSAGE", "Dadbot bootstrap connection test."),
+            test_message=_text("DISCORD_TEST_MESSAGE", "dadbot bootstrap connection test."),
             twitch_client_id=_text("TWITCH_CLIENT_ID"),
             twitch_client_secret=_text("TWITCH_CLIENT_SECRET"),
             twitch_user_login=_text("TWITCH_USER_LOGIN"),

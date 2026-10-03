@@ -1,6 +1,6 @@
-# Dadbot
+# dadbot
 
-Dadbot is a single-community Discord engagement bot with durable scheduling and a mildly
+dadbot is a single-community Discord engagement bot with durable scheduling and a mildly
 corny disposition. It posts YouTube and livestream alerts, rotates engagement content,
 manages suggestions and reminders, and lets moderators feature community highlights.
 
@@ -72,8 +72,11 @@ Required:
 Recommended:
 
 - `DISCORD_YOUTUBE_UPLOAD_CHANNEL_ID`: YouTube upload destination; otherwise uses the default.
+- `DISCORD_YOUTUBE_UPLOAD_ROLE_ID`: optional role to mention in YouTube upload announcements.
 - `DISCORD_LIVE_NOTIFICATION_CHANNEL_ID`: YouTube and Twitch live destination; otherwise uses the
   default.
+- `DISCORD_LIVE_NOTIFICATION_ROLE_ID`: optional role to mention in YouTube and Twitch live
+  announcements.
 - `DISCORD_SUGGESTION_CHANNEL_ID`, `DISCORD_HIGHLIGHT_CHANNEL_ID`: otherwise use the default.
 - `DISCORD_EVENT_CHANNEL_ID`: event announcements and reminders; otherwise uses the default.
 - `DISCORD_OWNER_IDS`: comma-separated developer user IDs. Discord application owners and
@@ -99,7 +102,9 @@ Weekdays are Monday `0` through Sunday `6`. Scheduled windows use the configured
 Invite the application with the `bot` and `applications.commands` scopes. The bot needs View
 Channels, Send Messages, Embed Links, Read Message History, Create Public Threads if discussions
 will use threads, and Send Polls for native weekly polls. No privileged gateway intents are
-required. Voice warnings from `discord.py` are harmless; Dadbot has no voice feature.
+required. To ping a configured role that is not publicly mentionable, dadbot also needs the
+Mention @everyone, @here, and All Roles permission. Voice warnings from `discord.py` are harmless;
+dadbot has no voice feature.
 
 Commands are guild-synced on startup and normally appear immediately:
 
@@ -121,7 +126,7 @@ a later week. Reminder polling sends a missed reminder only while its event is s
 External IDs, stream state, announcements, content history, reminders, event RSVPs, views, and job
 metadata are stored in SQLite, preventing restart duplicates.
 
-Content pools live in `content/*.json`. IDs must be unique within a pool. Dadbot cycles through
+Content pools live in `content/*.json`. IDs must be unique within a pool. dadbot cycles through
 least-used entries before favoring repeats. Malformed pools fail startup visibly instead of
 silently posting bad content.
 
@@ -166,7 +171,7 @@ python -m dadbot.manage backup --retention 30
 ```
 
 Backups use SQLite's online backup API and are timestamped under `data/backups/`; retention defaults
-to 14. Back up `.env` separately in a secure secret store. To restore while Dadbot is stopped,
+to 14. Back up `.env` separately in a secure secret store. To restore while dadbot is stopped,
 retain the current database, place the selected backup at `DATABASE_PATH`, then run `check-db`.
 
 Application logs rotate at 5 MB with five retained files at `logs/dadbot.log`. Logs contain IDs and
