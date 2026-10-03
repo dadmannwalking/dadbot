@@ -8,6 +8,7 @@ def test_notification_channels_and_twitch_settings(monkeypatch) -> None:
         "DISCORD_DEFAULT_CHANNEL_ID": "10",
         "DISCORD_YOUTUBE_UPLOAD_CHANNEL_ID": "11",
         "DISCORD_LIVE_NOTIFICATION_CHANNEL_ID": "12",
+        "DISCORD_EVENT_CHANNEL_ID": "13",
         "TWITCH_CLIENT_ID": "client",
         "TWITCH_CLIENT_SECRET": "secret",
         "TWITCH_USER_LOGIN": "dadmannwalking",
@@ -20,6 +21,7 @@ def test_notification_channels_and_twitch_settings(monkeypatch) -> None:
 
     assert settings.youtube_upload_channel_id == 11
     assert settings.live_notification_channel_id == 12
+    assert settings.event_channel_id == 13
     assert settings.twitch_user_login == "dadmannwalking"
     assert settings.twitch_poll_minutes == 3
 
@@ -30,8 +32,10 @@ def test_notification_channels_fall_back_to_default(monkeypatch) -> None:
     monkeypatch.setenv("DISCORD_DEFAULT_CHANNEL_ID", "10")
     monkeypatch.setenv("DISCORD_YOUTUBE_UPLOAD_CHANNEL_ID", "")
     monkeypatch.setenv("DISCORD_LIVE_NOTIFICATION_CHANNEL_ID", "")
+    monkeypatch.setenv("DISCORD_EVENT_CHANNEL_ID", "")
 
     settings = Settings.from_environment()
 
     assert settings.youtube_upload_channel_id == 10
     assert settings.live_notification_channel_id == 10
+    assert settings.event_channel_id == 10

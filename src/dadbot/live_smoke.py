@@ -5,7 +5,7 @@ import logging
 from datetime import UTC, datetime, timedelta
 
 from dadbot.bot import DadBot
-from dadbot.cogs.community import SuggestionView, iso
+from dadbot.cogs.community import EventView, SuggestionView, iso
 from dadbot.config import Settings
 from dadbot.logging_setup import configure_logging
 from dadbot.types import StreamState
@@ -133,12 +133,13 @@ class LiveSmokeBot(DadBot):
         event_at = datetime.now(UTC) + timedelta(minutes=30)
         async with self.db.transaction() as connection:
             cursor = await connection.execute(
-                "INSERT INTO events(guild_id,channel_id,name,event_at,created_by,created_at) "
-                "VALUES(?,?,?,?,?,?)",
+                "INSERT INTO events(guild_id,channel_id,name,description,event_at,created_by,created_at) "
+                "VALUES(?,?,?,?,?,?,?)",
                 (
                     self.settings.guild_id,
                     channel.id,
                     "Dadbot live-test event",
+                    "A harmless test gathering for checking the snacks and the RSVP buttons.",
                     iso(event_at),
                     self.user.id,
                     now,
@@ -148,10 +149,20 @@ class LiveSmokeBot(DadBot):
                 "INSERT INTO event_reminders(event_id,offset_minutes,due_at) VALUES(?,?,?)",
                 (cursor.lastrowid, 60, iso(datetime.now(UTC) - timedelta(minutes=1))),
             )
+            event_id = cursor.lastrowid
+        event_view = EventView(cog, event_id)  # type: ignore[arg-type]
+        event_message = await channel.send(
+            embed=await cog.event_embed(event_id),
+            view=event_view,  # type: ignore[attr-defined]
+        )
+        await self.db.execute(
+            "UPDATE events SET message_id=? WHERE id=?", (event_message.id, event_id)
+        )
+        self.add_view(event_view, message_id=event_message.id)
         sent = await cog.send_due_event_reminders()  # type: ignore[attr-defined]
         if sent < 1:
             raise AssertionError("Event reminder was not sent")
-        results.append("event reminder: sent and marked")
+        results.append("event: announcement buttons and reminder sent")
 
         guild_commands = await self.tree.fetch_commands(
             guild=self.get_guild(self.settings.guild_id)

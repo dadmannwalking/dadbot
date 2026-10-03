@@ -151,6 +151,57 @@ class SuggestionView(discord.ui.View):
         await self._set_status(interaction, "declined")
 
 
+class EventView(discord.ui.View):
+    def __init__(self, cog: CommunityCog, event_id: int) -> None:
+        super().__init__(timeout=None)
+        self.cog = cog
+        self.event_id = event_id
+        self.going.custom_id = f"dadbot:event:{event_id}:going"
+        self.not_going.custom_id = f"dadbot:event:{event_id}:not_going"
+        self.not_interested.custom_id = f"dadbot:event:{event_id}:not_interested"
+
+    async def _respond(self, interaction: discord.Interaction, response: str) -> None:
+        row = await self.cog.db.fetchone(
+            "SELECT cancelled_at,event_at FROM events WHERE id=?", (self.event_id,)
+        )
+        if (
+            row is None
+            or row["cancelled_at"] is not None
+            or datetime.fromisoformat(row["event_at"]) <= utcnow()
+        ):
+            await interaction.response.send_message(
+                "That event is no longer active.", ephemeral=True
+            )
+            return
+        await self.cog.db.execute(
+            """INSERT INTO event_responses(event_id,user_id,response,updated_at)
+               VALUES(?,?,?,?)
+               ON CONFLICT(event_id,user_id) DO UPDATE SET
+                   response=excluded.response,updated_at=excluded.updated_at""",
+            (self.event_id, interaction.user.id, response, iso(utcnow())),
+        )
+        await interaction.response.edit_message(
+            embed=await self.cog.event_embed(self.event_id), view=self
+        )
+        await interaction.followup.send("Your response has been updated.", ephemeral=True)
+
+    @discord.ui.button(label="Going", emoji="✅", style=discord.ButtonStyle.success)
+    async def going(self, interaction: discord.Interaction, button: discord.ui.Button[Any]) -> None:
+        await self._respond(interaction, "going")
+
+    @discord.ui.button(label="Not Going", emoji="✖️", style=discord.ButtonStyle.danger)
+    async def not_going(
+        self, interaction: discord.Interaction, button: discord.ui.Button[Any]
+    ) -> None:
+        await self._respond(interaction, "not_going")
+
+    @discord.ui.button(label="Not Interested", emoji="🚫", style=discord.ButtonStyle.secondary)
+    async def not_interested(
+        self, interaction: discord.Interaction, button: discord.ui.Button[Any]
+    ) -> None:
+        await self._respond(interaction, "not_interested")
+
+
 class CommunityCog(commands.Cog):
     event = app_commands.Group(name="event", description="Manage community event reminders")
     highlight = app_commands.Group(name="highlight", description="Manage weekly highlights")
@@ -169,16 +220,23 @@ class CommunityCog(commands.Cog):
         except app_commands.CommandAlreadyRegistered:
             pass
         restored = await self.restore_persistent_views()
-        log.info("Restored %d persistent suggestion view(s)", restored)
+        log.info("Restored %d persistent community view(s)", restored)
 
     async def restore_persistent_views(self) -> int:
         """Register component handlers for suggestions posted before this process."""
-        rows = await self.db.fetchall(
+        suggestion_rows = await self.db.fetchall(
             "SELECT id,message_id FROM suggestions WHERE status='open' AND message_id IS NOT NULL"
         )
-        for row in rows:
+        for row in suggestion_rows:
             self.bot.add_view(SuggestionView(self, row["id"]), message_id=row["message_id"])
-        return len(rows)
+        event_rows = await self.db.fetchall(
+            "SELECT id,message_id FROM events WHERE cancelled_at IS NULL "
+            "AND message_id IS NOT NULL AND event_at>?",
+            (iso(utcnow()),),
+        )
+        for row in event_rows:
+            self.bot.add_view(EventView(self, row["id"]), message_id=row["message_id"])
+        return len(suggestion_rows) + len(event_rows)
 
     async def cog_unload(self) -> None:
         self.bot.tree.remove_command(self.nomination_menu.name, type=self.nomination_menu.type)
@@ -367,13 +425,16 @@ class CommunityCog(commands.Cog):
     @event.command(name="create", description="Create an event and its reminders")
     @app_commands.guild_only()
     @app_commands.describe(
-        when="ISO local date/time, e.g. 2026-10-15 19:30", offsets="Minutes before, comma separated"
+        when="ISO local date/time, e.g. 2026-10-15 19:30",
+        description="What the event is about",
+        offsets="Minutes before, comma separated",
     )
     async def event_create(
         self,
         interaction: discord.Interaction,
         name: app_commands.Range[str, 1, 100],
         when: str,
+        description: app_commands.Range[str, 1, 4000] | None = None,
         offsets: str = "1440,60",
         channel: discord.TextChannel | None = None,
     ) -> None:
@@ -393,18 +454,31 @@ class CommunityCog(commands.Cog):
                 "The event must be in the future.", ephemeral=True
             )
             return
-        target = channel or interaction.channel
+        target = channel
+        configured_channel_id = getattr(self.settings, "event_channel_id", None)
+        if target is None and configured_channel_id is not None:
+            target = self.bot.get_channel(configured_channel_id)
+            if target is None:
+                try:
+                    target = await self.bot.fetch_channel(configured_channel_id)
+                except discord.HTTPException:
+                    target = None
+        if target is None and configured_channel_id is None:
+            target = interaction.channel
         if not isinstance(target, discord.TextChannel):
-            await interaction.response.send_message("Choose a server text channel.", ephemeral=True)
+            await interaction.response.send_message(
+                "I cannot access the configured event channel.", ephemeral=True
+            )
             return
         now = iso(utcnow())
         async with self.db.transaction() as connection:
             cursor = await connection.execute(
-                "INSERT INTO events(guild_id,channel_id,name,event_at,created_by,created_at) VALUES(?,?,?,?,?,?)",
+                "INSERT INTO events(guild_id,channel_id,name,description,event_at,created_by,created_at) VALUES(?,?,?,?,?,?,?)",
                 (
                     interaction.guild_id,
                     target.id,
                     str(name),
+                    str(description).strip() if description else None,
                     iso(event_at),
                     interaction.user.id,
                     now,
@@ -417,11 +491,48 @@ class CommunityCog(commands.Cog):
                     "INSERT INTO event_reminders(event_id,offset_minutes,due_at) VALUES(?,?,?)",
                     (event_id, offset, iso(datetime.fromtimestamp(due_at, UTC))),
                 )
+        view = EventView(self, event_id)
+        try:
+            message = await target.send(embed=await self.event_embed(event_id), view=view)
+        except Exception:
+            await self.db.execute("DELETE FROM events WHERE id=?", (event_id,))
+            log.exception("Failed to publish event %s", event_id)
+            await interaction.response.send_message(
+                "I couldn't publish that event.", ephemeral=True
+            )
+            return
+        await self.db.execute("UPDATE events SET message_id=? WHERE id=?", (message.id, event_id))
+        self.bot.add_view(view, message_id=message.id)
         await interaction.response.send_message(
             f"Event #{event_id} created for <t:{int(event_at.timestamp())}:F> in {target.mention}; reminders: "
             + ", ".join(f"{value}m" for value in parsed_offsets),
             ephemeral=True,
         )
+
+    async def event_embed(self, event_id: int) -> discord.Embed:
+        row = await self.db.fetchone(
+            """SELECT e.*,
+                      SUM(CASE WHEN r.response='going' THEN 1 ELSE 0 END) AS going,
+                      SUM(CASE WHEN r.response='not_going' THEN 1 ELSE 0 END) AS not_going,
+                      SUM(CASE WHEN r.response='not_interested' THEN 1 ELSE 0 END) AS not_interested
+               FROM events e LEFT JOIN event_responses r ON r.event_id=e.id
+               WHERE e.id=? GROUP BY e.id""",
+            (event_id,),
+        )
+        if row is None:
+            return discord.Embed(title="Event unavailable", colour=discord.Colour.dark_grey())
+        timestamp = int(datetime.fromisoformat(row["event_at"]).timestamp())
+        details = f"Starts <t:{timestamp}:F> (<t:{timestamp}:R>)"
+        if row["description"]:
+            details = f"{row['description']}\n\n{details}"
+        embed = discord.Embed(
+            title=row["name"], description=details, colour=discord.Colour.orange()
+        )
+        embed.set_author(name="📅 Community event")
+        embed.add_field(name="Going", value=str(row["going"]), inline=True)
+        embed.add_field(name="Not Going", value=str(row["not_going"]), inline=True)
+        embed.add_field(name="Not Interested", value=str(row["not_interested"]), inline=True)
+        return embed
 
     @event.command(name="list", description="List upcoming configured events")
     @app_commands.guild_only()
@@ -465,7 +576,7 @@ class CommunityCog(commands.Cog):
         """Send useful due reminders. Safe to invoke repeatedly and after downtime."""
         current = (now or utcnow()).astimezone(UTC)
         rows = await self.db.fetchall(
-            """SELECT r.event_id,r.offset_minutes,e.channel_id,e.name,e.event_at
+            """SELECT r.event_id,r.offset_minutes,e.channel_id,e.name,e.description,e.event_at
                FROM event_reminders r JOIN events e ON e.id=r.event_id
                WHERE r.sent_at IS NULL AND e.cancelled_at IS NULL AND r.due_at<=? AND e.event_at>?
                ORDER BY r.due_at""",
@@ -484,10 +595,14 @@ class CommunityCog(commands.Cog):
                 continue
             event_at = datetime.fromisoformat(row["event_at"])
             try:
-                await channel.send(
-                    f"⏰ **{row['name']}** starts <t:{int(event_at.timestamp())}:R> "
-                    f"(<t:{int(event_at.timestamp())}:F>)."
+                reminder = f"This event starts in <t:{int(event_at.timestamp())}:R>"
+                if row["description"]:
+                    reminder = f"{row['description']}\n\n{reminder}"
+                embed = discord.Embed(
+                    title=row["name"], description=reminder, colour=discord.Colour.red()
                 )
+                embed.set_author(name="⏰ Event reminder")
+                await channel.send(embed=embed)
             except discord.HTTPException:
                 log.exception("Failed event reminder %s/%s", row["event_id"], row["offset_minutes"])
                 continue

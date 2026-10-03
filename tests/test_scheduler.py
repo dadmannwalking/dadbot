@@ -20,6 +20,7 @@ def settings(tmp_path) -> Settings:
         live_notification_channel_id=2,
         suggestion_channel_id=2,
         highlight_channel_id=2,
+        event_channel_id=2,
         owner_ids=frozenset({3}),
         timezone=ZoneInfo("UTC"),
         database_path=tmp_path / "db.sqlite3",

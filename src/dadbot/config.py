@@ -64,6 +64,7 @@ class Settings:
     live_notification_channel_id: int | None
     suggestion_channel_id: int | None
     highlight_channel_id: int | None
+    event_channel_id: int | None
     owner_ids: frozenset[int]
     timezone: ZoneInfo
     database_path: Path
@@ -118,6 +119,7 @@ class Settings:
             ),
             suggestion_channel_id=_integer("DISCORD_SUGGESTION_CHANNEL_ID", default_channel),
             highlight_channel_id=_integer("DISCORD_HIGHLIGHT_CHANNEL_ID", default_channel),
+            event_channel_id=_integer("DISCORD_EVENT_CHANNEL_ID", default_channel),
             owner_ids=_ids("DISCORD_OWNER_IDS"),
             timezone=timezone,
             database_path=Path(_text("DATABASE_PATH", "data/dadbot.sqlite3")),

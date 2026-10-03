@@ -11,7 +11,8 @@ manages suggestions and reminders, and lets moderators feature community highlig
 - Randomized dad jokes every 2–4 days and showcase prompts every 7–12 days
 - Weekly questions and Discord-native polls in configurable daytime windows
 - Manual lightweight challenges
-- Persistent event reminders with any positive minute offsets (defaults: 24h and 1h)
+- Persistent event announcements, RSVP buttons, and reminders with any positive minute offsets
+  (defaults: 24h and 1h)
 - `/suggest` with durable Support, Accept, and Decline buttons
 - Moderator message-context nomination and `/highlight post`
 - `/bot status` and protected `/dev` test controls
@@ -74,6 +75,7 @@ Recommended:
 - `DISCORD_LIVE_NOTIFICATION_CHANNEL_ID`: YouTube and Twitch live destination; otherwise uses the
   default.
 - `DISCORD_SUGGESTION_CHANNEL_ID`, `DISCORD_HIGHLIGHT_CHANNEL_ID`: otherwise use the default.
+- `DISCORD_EVENT_CHANNEL_ID`: event announcements and reminders; otherwise uses the default.
 - `DISCORD_OWNER_IDS`: comma-separated developer user IDs. Discord application owners and
   members with Manage Server also pass `/dev` authorization.
 - `BOT_TIMEZONE`: IANA zone, default `America/Indiana/Indianapolis`.
@@ -103,7 +105,7 @@ Commands are guild-synced on startup and normally appear immediately:
 
 - `/bot status`
 - `/suggest text:<idea>`
-- `/event create|list|cancel`
+- `/event create|list|cancel` (creation supports an optional description and persistent RSVPs)
 - `/highlight post`
 - Message context menu → **Apps** → **Nominate for highlight**
 - `/dev trigger`, `/dev youtube`, `/dev livestream`, `/dev scheduler`
@@ -116,8 +118,8 @@ server. Hiding a button or command is never the authorization mechanism.
 Jokes and showcase prompts receive a new randomized daytime run after startup and after each run;
 stale executions are not dumped. Weekly jobs may catch up later on their intended day, but not in
 a later week. Reminder polling sends a missed reminder only while its event is still upcoming.
-External IDs, stream state, announcements, content history, reminders, views, and job metadata are
-stored in SQLite, preventing restart duplicates.
+External IDs, stream state, announcements, content history, reminders, event RSVPs, views, and job
+metadata are stored in SQLite, preventing restart duplicates.
 
 Content pools live in `content/*.json`. IDs must be unique within a pool. Dadbot cycles through
 least-used entries before favoring repeats. Malformed pools fail startup visibly instead of
