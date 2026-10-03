@@ -159,20 +159,19 @@ class DadBot(commands.Bot):
             message = await channel.send(
                 content="📊 Weekly very-scientific community poll:", poll=poll
             )
-        elif feature == "dad_joke":
-            embed = discord.Embed(
-                description=item.text,
-                color=discord.Color.orange(),
-            )
-            embed.set_author(name="👨 Dad joke delivery")
-            message = await channel.send(embed=embed)
         else:
             headings = {
+                "dad_joke": "👨 Dad joke delivery",
                 "question": "💬 Question of the week",
                 "challenge": "🏁 Community challenge",
                 "showcase": "🛠️ Show-and-tell time",
             }
-            message = await channel.send(f"**{headings[feature]}**\n{item.text}")
+            embed = discord.Embed(
+                description=item.text,
+                color=discord.Color.orange(),
+            )
+            embed.set_author(name=headings[feature])
+            message = await channel.send(embed=embed)
         log.info("Posted %s content item %s as message %s", feature, item.id, message.id)
         return message
 
